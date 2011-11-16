@@ -78,6 +78,24 @@ other versions of pgpring and the output produced by gpg --with-colons
 	 with 's' the signatures on the key
 	 
 	 This file is then processed with cut -d\; -f1 $OUTDIR/preprocessed >$OUTDIR/preprocessed.ka
+	 
+   * keystatus.csv
+     V;98CCD9F47815734F;17;1024;2005-08-09;;4;1
+     <status>;<keyid>;<pkalgo>;<keylen>;<created>;<expire>;<keyversion>;<valid_uids>
+     * Status:
+        * E:  Expired key
+        * Ro: Key revoked by the owner
+        * Rd: Key revoked by a designated trusted 3rd party
+        * I:  Invalid key (no valid self signatures)
+        * V:  Valid key (at least one user id is correctly self signed)
+        * VC: Valid and Certified key (at least one user id is certified by another valid key)
+     * Long (16 hex digits) Key ID
+     * Public Key Algorithm (see RFC4880 sect. 9.1)
+     * Key length, in bits
+     * key creation date (YYYY-MM-DD)
+     * key expiration date, if any (YYYY-MM-DD or empty string)
+     * key format version (see RFC4880 sect. 5.5.2)
+     * Number of valid User IDs
 
 
 *** keyanalyze output format ***
@@ -108,4 +126,3 @@ other versions of pgpring and the output produced by gpg --with-colons
        * Betweenness centrality (absolute)
        * Betweenness centrality (relative)
        * Clustering coefficient
-       
