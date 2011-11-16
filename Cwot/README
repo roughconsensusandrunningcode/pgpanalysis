@@ -1,0 +1,27 @@
+How it works at the moment
+
+ 0. Prerequisites: 
+	- to compile wot.c, simply type 'make'. If your system
+ 	  does not have /usr/include/sys/queue.h or
+	  /usr/include/sys/tree.h you have to un-comment one line
+	  in the Makefile, see there.
+	- you need the LWP::Simple and LWP::UserAgent perl modules
+	  (libwww on CPAN, IIRC)
+ 1. You call the docwot.pl script without arguments. It
+	 - creates a directory named yyyy-mm-dd (the current date)
+	 - pulls a complete dump off one of the keyservers into
+	   the directory (some 80-100 files called keydump-0???.pgp).
+	 - runs pgpring over the dumpfiles to create a file of
+	   'preprocessed.keys' form.
+	 - starts wot on that file. wot will need about 200Mb of
+	   memory and takes about 9 hours on an amd64
+	   at 2 Ghz
+	 - parses wot's output (yyyy-mm-dd-ranks)
+	 - sorts it
+	 - tries to open a database called keyid.db. If this does
+	   not exist, it will die. You can create this file
+	   by calling "fetchid.pl yyyy-mm-dd 1000". This 
+	   will create a database of keyid -> username mappings for
+	   the top 1000 keys in the ranking.
+	 - docwot.pl uses the database to map keyids to userids
+	 - and then creates a the file top1000.html 

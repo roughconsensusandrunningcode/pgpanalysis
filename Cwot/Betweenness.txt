@@ -1,0 +1,56 @@
+Computing Betweenness Centrality
+
+The mean-minimum-distance of a key to all other keys
+in a graph gives some idea of the connectedness
+of the key. But it does not express how the key 
+contributes to the infrastructure of the web-of-trust.
+It would be nice to have measurement of, e.g.,
+the number of otherwise disjoint communities which
+are connected only or mainly through a key.
+
+A quantity that expresses something like this is the
+Betweenness Centrality.  In a nutshell, it is the
+number of shortest paths which lead through a vertex in
+a graph.  The paths are taken from every vertex, to
+every vertex.  If there is more than one shortest path
+between two vertices, the centrality of the vertices on
+the paths is increased only by the fraction of paths
+which they are part of.
+
+Formally, Betweenness Centrality is defined as follows:
+$C(v) = \sum_{s \neq v \neq t \in V}\frac{\sigma_{st}(v)}{\sigma_{st}}$
+where $\sigma_{st}$ is the number of shortest paths from $s$ to $t$ in $V$
+and $\sigma_{st}(v)$ the number of shortest paths from $s$ to
+$t$ through $v$ in $V$.
+$C(v)$ expresses an aspect of centrality of $v$ in $V$
+
+The C code in wot.c computes the betweenness centrality
+of all keys of a graph. The graph must be presented in
+the preprocess.keys format, i.e., for each vertex there
+must be exactly one line of the form
+
+p<keyid>
+
+followed by one or more lines of the form
+
+s<keyid>
+
+The lines starting with 's' describe the predecessors (the signers) of
+the keyid in the last 'p'-line. 
+The program looks for the largest component of the given graph
+and computes the centrality of this component's vertex only.
+
+The algorithm used to compute the Betweenness
+Centrality was taken from a paper by Ulrik Brandes, 
+"A Faster Algorithm for Betweennes Centrality" 
+in "Journal of Mathematical Sociology", 25(5):163-177, 2001. 
+The time-complexity is O(nm), where n is the number of
+vertices (keys) and m the number of edges (signatures).
+The space-complexity is O(n + m), but my clumsy
+implementation might scale worse.
+
+The code is available under the MIT license.
+
+Now go and play with it,
+
+Matthias Bauer

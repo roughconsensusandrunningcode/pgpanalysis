@@ -1,0 +1,17 @@
+Changes respect to the debian packaged version
+
+* Changed output format
+
+* pgplib.h, pgppubring.c, pgpring.1
+    -P option dumps some signature subpacket
+
+* pgppubring.c
+    Resolved wrong key length bug (Debian bug #602284)
+        http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=602284
+
+* pgplib.h, pgppubring.c, pgpring.1
+    Added command line options to exclude expired keys and/or
+    signatures (Debian bug #603257)
+        http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=603257
+
+

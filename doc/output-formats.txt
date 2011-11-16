@@ -1,0 +1,111 @@
+This doc file is incomplete.
+The software is under development, specifications may change.
+CSV files are delimited by ';'.
+
+*** pgpring output format ***
+Please note that this output is not compatible with output produced by
+other versions of pgpring and the output produced by gpg --with-colons
+
+ * Public Key record
+   pub:<flags>:<keylen>:<pkalgo>:<key id>:<creation date>:<expire date>:<key version>:
+   * Flags
+      * e: Expired key
+      * r: Revoked key
+      * d: Disabled key
+      * q: Trusted key
+   * Key length, in bits
+   * Public Key Algorithm (see RFC4880 sect. 9.1)
+   * Long (16 hex digits) Key ID
+   * key creation date (YYYY-MM-DD)
+   * key expiration date, if any (YYYY-MM-DD or empty string)
+   * key format version (see RFC4880 sect. 5.5.2)
+
+ * User ID record
+   uid:q::::::::<uid>:
+   * User ID
+
+ * Certification Signature record
+   sig:<issuer>:<signature date>:<expiration date>:<signature type>:<flags>:<version>:<pkalgo>:<hashalgo>
+   * Long (16 hex digits) Key ID of the certification issuer
+   * Signature creation date (YYYY-MM-DD)
+   * Signature expiration date, if any (YYYY-MM-DD or empty string)
+   * Signature type (see RFC4880 sect. 5.2.1)
+     * 0x10: Generic certification of a User ID and Public-Key packet
+     * 0x11: Persona certification of a User ID and Public-Key packet
+     * 0x12: Casual certification of a User ID and Public-Key packet
+     * 0x13: Positive certification of a User ID and Public-Key packet
+   * Flags
+     * e: The signature is expired
+     * C: The signature has at least a subpacket marked as critical
+     * N: The signature has a signature notation (see RFC4880 sect. 5.2.3.16)
+     * P: The signature has a certification policy (see RFC4880 sect. 5.2.3.20)
+     * p: The (self-)signature identified the primary UID of the public key
+   * Signature packet format version (see RFC4880 sect. 5.2.2/5.2.3)
+   * Public Key Algorithm (see RFC4880 sect. 9.1)
+   * Hash Algorithm (see RFC4880 sect. 9.4)
+
+ * Key/Certification Revocation Signature
+   rev:<issuer>:<date>::<revocation type>::<version>:<pkalgo>:<hashalgo>
+   * Long (16 hex digits) Key ID of the revocation issuer
+   * Signature creation date (YYYY-MM-DD)
+   * Revocation type (see RFC4880 sect. 5.2.1)
+     * 0x20: Key revocation signature
+     * 0x30: Certification revocation signature
+   * Signature packet format version (see RFC4880 sect. 5.2.2/5.2.3)
+   * Public Key Algorithm (see RFC4880 sect. 9.1)
+   * Hash Algorithm (see RFC4880 sect. 9.4)
+
+ * Signature Subpacket record
+   spk:<type>:<flags>:<len>:<data>
+   * Type (see RFC4880 sect. 5.2.3.1)
+   * Flags (TBD)
+   * Data Length, in octets
+   * Data (non-printable characters encoded in hex)
+   
+ * Subkey record
+   sub:<flags>:<len>:<pkalgo>:<key id>:<creation date>:<expiration date>:<key version>:
+   Same as Public key record format
+
+*** process-keys.py output format ***
+   * preprocessed - Sequences of lines:
+        p<keyid> 
+        s<keyid>;<signature-date>;<signature-expiration>;<flags>;<level>;<pkalgo>;<hashalgo>;<version>
+        ... 
+        p<keyid> 
+        s<keyid>...
+        ... 
+	 where lines starting with 'p' introduce a public key and lines starting
+	 with 's' the signatures on the key
+	 
+	 This file is then processed with cut -d\; -f1 $OUTDIR/preprocessed >$OUTDIR/preprocessed.ka
+
+
+*** keyanalyze output format ***
+   * msd.csv - For each key in the Reachable set:
+       * Long (16 hex digits) Key ID
+       * Mean Shortest Distance (MSD)
+       * in-degree
+       * out-degree
+       * cross-degree
+       * in-degree (only from keys in the strong set)
+       * out-degree (only to keys in the strong set)
+       * cross-degree (only from/to keys in the strong set)
+       * Eccentricity
+       * 1 if the key is in the strong set, 0 otherwise
+       
+   * preprocessed.strongset - same format as preprocessed.ka, but considering
+     only keys in the strong set
+     
+
+*** pgpring-statistics.py output ***
+   * strongset.csv - For each key in the strong set:
+       * Long (16 hex digits) Key ID
+       * Mean Shortest Distance (MSD)
+       * in-degree (only from keys in the strong set)
+       * out-degree (only to keys in the strong set)
+       * cross-degree (only from/to keys in the strong set)
+       * eccentricity
+       * Betweenness centrality (absolute)
+       * Betweenness centrality (relative)
+       * Clustering coefficient
+       

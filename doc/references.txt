@@ -1,0 +1,32 @@
+[Abdul-Rahman1997] A. Abdul-Rahman, "The PGP trust model",
+     EDI-Forum: The Journal of Electronic Commerce, vol. 10, no. 3,
+     pp. 27–31, 1997.
+     [Online]. Available: http://www.wim.uni-koeln.de/uploads/media/The_PGP_Trust_Model.pdf
+
+[McBurnett1997] N. McBurnett, "PGP web of trust statistics", 1997.
+     [Online]. Available: http://bcn.boulder.co.us/˜neal/pgpstat/
+
+[Butts2008] C. T. Butts, "Social network analysis: A methodological introduction",
+     Asian Journal of Social Psychology, vol. 11, no. 1, pp. 13–41, Mar. 2008.
+     [Online]. Available: http://courses.washington.edu/ir2010/readings/butts.pdf
+
+[Fagiolo2007] G. Fagiolo, "Clustering in complex directed networks",
+     Physical Review E, vol. 76, no. 2, pp. 026107+, Aug. 2007.
+     [Online]. Available: http://arxiv.org/pdf/physics/0612169
+
+[Hanneman2005] R. A. Hanneman and M. Riddle. (2005)
+     Introduction to social network methods. Riverside, CA, USA.
+     [Online]. Available: http://faculty.ucr.edu/~hanneman/nettext/ 
+
+[Penning] H. P. Penning. Analysis of the strong set in the PGP web of trust.
+     [Online]. Available: http://pgp.cs.uu.nl/plot/
+
+[RFC4880] J. Callas, L. Donnerhacke, H. Finney, D. Shaw, and R. Thayer,
+     "OpenPGP message format", RFC 4880 (Proposed Standard),
+     Internet Engineering Task Force, Nov. 2007.
+     [Online]. Available: http://www.ietf.org/rfc/rfc4880.txt
+    
+[White1994] D. R. White and S. P. Borgatti, "Betweenness centrality measures
+     for directed graphs", Social Networks, vol. 16, no. 4, pp. 335–346, 1994.
+     [Online]. Available: http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.75.761&rep=rep1&type=pdf
+     

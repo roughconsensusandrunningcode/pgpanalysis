@@ -1,0 +1,34 @@
+A set of programs to perform statistical analysis over the OpenPGP
+keyring.
+
+ * keyanalyze/
+   Identifies strongly connected sets in the keyring and computes
+   Mean Shortest Distance (MSD) and other network characteristics for
+   all keys in the largest strongly connected set ("the strong set")
+   
+   By M. Drew Streib et. al. - Licensed under GNU General Public
+   License (GPL) version 2.
+   
+ * keyanalyze/pgpring/
+   PGP keyring dumper: takes a full keyserver dump and produces an
+   output similar to (but, in this version, not compatible with) the
+   one produced by gpg --with-colons
+   
+   By Thomas Roessler et. al. - Licensed under GNU General Public
+   License (GPL) version 2 or later.
+   
+ * Cwot/
+   Computes the betweenness centrality of all keys in the strong set
+   (see Cwot/Betweenness.txt for details)
+   
+   By Matthias Bauer - Licensed under MIT license
+ 
+ * scripts/
+   * process-keys.py: takes pgpring output and produce suitable output
+     for keyanalyze and pgpring-statistics.py
+   
+   * pgpring-statistics.py: takes keyanalyze and process-keys.py output
+     and performs statistical analysis. 
+   
+   By Fabrizio Tarizzo - Licensed under GNU General Public License
+   (GPL) version 3 or later.

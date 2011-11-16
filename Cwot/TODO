@@ -1,0 +1,27 @@
+TODO
+
+- check correctness of find_biggest_compound 
+- check for maximum.component instead of re-computing it, if available
+- Routine for removing vertices (from the tree and the lists of successors)
+- Implement other norms, like MMD, Average-Pathlength, Ratio of shortcuts,...
+- Check keyserver dump for smaller components of interesting size
+- Bridge Centrality: Don't increase centrality if there is more than
+  one shortest path
+- Cut out the highest ranking keys and look for islands of disconnected
+  keys after the cut. Store islands together with the keys that caused
+  the disconnect.
+- Compute size of 2-hops-island for each key. Key with largest
+  island wins (most possible meaningful introductions).
+- Build a tree of islands connecting over time up to the present
+  largest component. Allow searches for the date when two keys
+  were first on the same island.
+
+DONE
+x check if the successor call in vertex_round shouldn't be a predecessor call
+	(U. Brandes paper gives the algo for undirected graphs, adaption
+		to directed graphs should be checked)
+x build own preprocess.keys from keyserver mirror
+x remove dangling keys (more than 60%) and check centrality then
+x script to create the keyid.db from publicly available sources
+x Run against the whole keyset from the keyservers.
+x Routine for testing connectedness
