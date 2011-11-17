@@ -4,11 +4,14 @@
      [Online]. Available: http://www.wim.uni-koeln.de/uploads/media/The_PGP_Trust_Model.pdf
 
 [McBurnett1997] N. McBurnett, "PGP web of trust statistics", 1997.
-     [Online]. Available: http://bcn.boulder.co.us/˜neal/pgpstat/
+     [Online]. Available: http://bcn.boulder.co.us/~neal/pgpstat/
 
 [Butts2008] C. T. Butts, "Social network analysis: A methodological introduction",
      Asian Journal of Social Psychology, vol. 11, no. 1, pp. 13–41, Mar. 2008.
      [Online]. Available: http://courses.washington.edu/ir2010/readings/butts.pdf
+
+[Cederlöf] J. Cederlöf. Dissecting the Leaf of Trust.
+     [Online]. Available: http://www.lysator.liu.se/~jc/wotsap/leafoftrust.html
 
 [Fagiolo2007] G. Fagiolo, "Clustering in complex directed networks",
      Physical Review E, vol. 76, no. 2, pp. 026107+, Aug. 2007.
