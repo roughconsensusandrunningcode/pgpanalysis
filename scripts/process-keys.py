@@ -20,14 +20,6 @@ import sys
 import os
 import csv
 
-# TODO make these configurable by command line options
-exclude_expired_keys = True
-exclude_expired_sigs = True
-exclude_revoked_keys = True
-exclude_revoked_sigs = True
-exclude_deprecated_hashalgos = False
-deprecated_hashalgos = []
-
 class Key:
 	def __init__ (self, keyid, keylen, flags, created, expire, pkalgo, keyversion):
 		self.keyid      = keyid
@@ -55,8 +47,17 @@ class Key:
 		self.most_recent_selfsig = None
 		
 	def __str__ (self):
-		return  "%s;%s;%d;%d;%s;%s;%d;%d" % \
-			(self.status, self.keyid, self.pkalgo, self.keylen, self.created, self.expire, self.keyversion, self.valid_uids)
+		mrs = self.most_recent_selfsig
+		if not mrs:
+			return  "%s;%s;%d;%d;%s;%s;%d;%d;;;;;;" % \
+				(self.status, self.keyid, self.pkalgo, self.keylen,
+				 self.created, self.expire, self.keyversion, self.valid_uids)
+		else:
+			return  "%s;%s;%d;%d;%s;%s;%d;%d;%s;%s;%s;%d;%d;%d" % \
+				(self.status, self.keyid, self.pkalgo, self.keylen,
+				 self.created, self.expire, self.keyversion, self.valid_uids,
+				 mrs.date, mrs.expire, mrs.flags, mrs.pkalgo, mrs.hashalgo,
+				 mrs.version)
 
 	def add_uid (self, uid):
 		self.uids.append (uid)
@@ -67,34 +68,44 @@ class Key:
 			uid.commit()
 			#Don't count revoked and non-selfsigned user ids
 			if not (uid.revoked) and uid.most_recent_selfsig:
-				self.valid_uids += 1
 				self.__add_signature (uid.most_recent_selfsig)
-				for k in uid.signatures:
-					self.__add_signature (uid.signatures[k])
+				if uid.most_recent_selfsig.is_valid():
+					self.valid_uids += 1
+					for k in uid.signatures:
+						self.__add_signature (uid.signatures[k])
 					
 		if self.status == '?':
-			if self.most_recent_selfsig:
+			if self.most_recent_selfsig and self.most_recent_selfsig.is_valid():
 				self.status = 'V'
 			else:
 				self.status = 'I'
 
 	def __add_signature (self, sig):
-		if exclude_revoked_sigs and sig.revoked:
-			return
-		if exclude_expired_sigs and sig.expired:
-			return
-		if exclude_deprecated_hashalgos and sig.hashalgo in deprecated_hashalgos:
-			return
-
 		issuer = sig.issuer
 		if issuer == self.keyid:
-			if not self.most_recent_selfsig or self.most_recent_selfsig.date < sig.date:
+			if not self.most_recent_selfsig:
+				self.most_recent_selfsig = sig
+			elif not (self.most_recent_selfsig.is_valid()) and sig.is_valid():
+				self.most_recent_selfsig = sig
+			elif self.most_recent_selfsig.date < sig.date and sig.is_valid():
 				self.most_recent_selfsig = sig
 		else:
-			if not issuer in self.signatures or self.signatures[issuer].date < sig.date:
+			if sig.is_valid() and (not issuer in self.signatures or self.signatures[issuer].date < sig.date):
 				self.signatures[issuer] = sig
                 
 class Signature:
+	__exclude_expired = False
+	__exclude_revoked = False
+	__exclude_deprecated_hashalgos = False
+	__deprecated_hashalgos = []
+	
+	@classmethod
+	def set_validity_requirements (cls, **kwargs):
+		cls.__exclude_expired = kwargs.get ('exclude_expired', False)
+		cls.__exclude_revoked = kwargs.get ('exclude_revoked', False)
+		cls.__exclude_deprecated_hashalgos = kwargs.get ('exclude_deprecated_hashalgos', False)
+		cls.__deprecated_hashalgos = kwargs.get ('deprecated_hashalgos', [])
+		
 	def __init__ (self, issuer, date, expire, level, flags, version, pkalgo, hashalgo):
 		self.issuer   = issuer
 		self.date     = date
@@ -109,6 +120,16 @@ class Signature:
 		self.revoked  = False
 		if 'e' in flags:
 			self.expired = True
+			
+	def is_valid (self):
+		if Signature.__exclude_revoked and self.revoked:
+			return False
+		if Signature.__exclude_expired and self.expired:
+			return False
+		if Signature.__exclude_deprecated_hashalgos and self.hashalgo in Signature.__deprecated_hashalgos:
+			return False
+			
+		return True
 			
 	def __str__ (self):
 		return "%s;%s;%s;%s;%d;%d;%d;%d" % \
@@ -142,19 +163,18 @@ class Uid:
 				self.revocations[issuer] = rev
 		
 	def add_signature (self, sig):
-		if exclude_revoked_sigs and sig.revoked:
-			return
-		if exclude_expired_sigs and sig.expired:
-			return
-		if exclude_deprecated_hashalgos and sig.hashalgo in deprecated_hashalgos:
-			return
-			
 		issuer = sig.issuer
 		if issuer == self.key.keyid:
-			if not self.most_recent_selfsig or self.most_recent_selfsig.date < sig.date:
+			#if not self.most_recent_selfsig or self.most_recent_selfsig.date < sig.date:
+			#	self.most_recent_selfsig = sig
+			if not self.most_recent_selfsig:
+				self.most_recent_selfsig = sig
+			elif not (self.most_recent_selfsig.is_valid()) and sig.is_valid():
+				self.most_recent_selfsig = sig
+			elif self.most_recent_selfsig.date < sig.date and sig.is_valid():
 				self.most_recent_selfsig = sig
 		else:
-			if not issuer in self.signatures or self.signatures[issuer].date < sig.date:
+			if sig.is_valid() and (not issuer in self.signatures or self.signatures[issuer].date < sig.date):
 				self.signatures[issuer] = sig
 				
 	def commit (self):
@@ -185,6 +205,21 @@ if __name__ == '__main__':
 	keycount = 0
 	
 	datadir  = sys.argv[1]
+	
+	# TODO make these configurable by command line options
+	exclude_expired_keys = True
+	exclude_expired_sigs = True
+	exclude_revoked_keys = True
+	exclude_revoked_sigs = True
+	exclude_deprecated_hashalgos = False
+	deprecated_hashalgos = []
+	
+	Signature.set_validity_requirements (
+		exclude_expired = exclude_expired_sigs,
+		exclude_revoked = exclude_revoked_sigs,
+		exclude_deprecated_hashalgos = exclude_deprecated_hashalgos,
+		deprecated_hashalgos = deprecated_hashalgos
+	)
 
 	# 1st pass
 	infile   = file (os.path.join (datadir, 'pgpring.dump'), 'r')
@@ -257,6 +292,7 @@ if __name__ == '__main__':
 				policy_uris[sig.issuer].add (pkdata)
 
 	do_key (key, outfiles)
+	print >>sys.stderr, "%d keys done, %d interesting." % (keycount, len (interesting_keys))
 	if key.status == 'V' and key.signatures:
 		interesting_keys.add (keyid)
 	
