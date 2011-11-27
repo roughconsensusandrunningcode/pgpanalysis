@@ -44,23 +44,27 @@ class Key:
 
 		self.uids = []
 		self.signatures = {}
+		self.primary_uid = None
 		self.most_recent_selfsig = None
 		
 	def __str__ (self):
 		mrs = self.most_recent_selfsig
 		if not mrs:
-			return  "%s;%s;%d;%d;%s;%s;%d;%d;;;;;;" % \
+			return  "%s;%s;%d;%d;%s;%s;%d;%d;;;;;;;%s" % \
 				(self.status, self.keyid, self.pkalgo, self.keylen,
-				 self.created, self.expire, self.keyversion, self.valid_uids)
+				 self.created, self.expire, self.keyversion, self.valid_uids,
+				 self.primary_uid)
 		else:
-			return  "%s;%s;%d;%d;%s;%s;%d;%d;%s;%s;%s;%d;%d;%d" % \
+			return  "%s;%s;%d;%d;%s;%s;%d;%d;%s;%s;%s;%d;%d;%d;%s" % \
 				(self.status, self.keyid, self.pkalgo, self.keylen,
 				 self.created, self.expire, self.keyversion, self.valid_uids,
 				 mrs.date, mrs.expire, mrs.flags, mrs.pkalgo, mrs.hashalgo,
-				 mrs.version)
+				 mrs.version, self.primary_uid)
 
 	def add_uid (self, uid):
 		self.uids.append (uid)
+		if self.primary_uid == None:
+			self.primary_uid = uid
 		
 	def commit (self):
 		self.valid_uids = 0
@@ -71,6 +75,9 @@ class Key:
 				self.__add_signature (uid.most_recent_selfsig)
 				if uid.most_recent_selfsig.is_valid():
 					self.valid_uids += 1
+					if uid.is_primary:
+						self.primary_uid = uid
+						
 					for k in uid.signatures:
 						self.__add_signature (uid.signatures[k])
 					
@@ -141,6 +148,7 @@ class Uid:
 		self.key     = key
 		self.revoked = False
 		
+		self.is_primary  = False
 		self.signatures  = {}
 		self.revocations = {}
 		self.most_recent_selfsig = None
@@ -162,17 +170,25 @@ class Uid:
 			elif rev.revtype == 0x30 and (not issuer in self.revocations or self.revocations[issuer].date < rev.date):
 				self.revocations[issuer] = rev
 		
+	def __set_mrs (self, sig):
+		self.most_recent_selfsig = sig
+		if 'p' in sig.flags:
+			self.is_primary = True
+			
+	def __str__ (self):
+		return self.userid
+					
 	def add_signature (self, sig):
 		issuer = sig.issuer
 		if issuer == self.key.keyid:
 			#if not self.most_recent_selfsig or self.most_recent_selfsig.date < sig.date:
 			#	self.most_recent_selfsig = sig
 			if not self.most_recent_selfsig:
-				self.most_recent_selfsig = sig
+				self.__set_mrs (sig)
 			elif not (self.most_recent_selfsig.is_valid()) and sig.is_valid():
-				self.most_recent_selfsig = sig
-			elif self.most_recent_selfsig.date < sig.date and sig.is_valid():
-				self.most_recent_selfsig = sig
+				self.__set_mrs (sig)
+			elif self.most_recent_selfsig.date <= sig.date and sig.is_valid():
+				self.__set_mrs (sig)
 		else:
 			if sig.is_valid() and (not issuer in self.signatures or self.signatures[issuer].date < sig.date):
 				self.signatures[issuer] = sig
@@ -289,6 +305,13 @@ if __name__ == '__main__':
 				# Certification policy URI
 				if not sig.issuer in policy_uris:
 					policy_uris[sig.issuer] = set()
+
+				if pkdata == 'string':
+					continue
+				if pkdata[0] in ('"', "'"):
+					pkdata = pkdata[1:]
+				if pkdata[-1] in ('"', "'"):
+					pkdata = pkdata[:-1]					
 				policy_uris[sig.issuer].add (pkdata)
 
 	do_key (key, outfiles)
@@ -339,11 +362,17 @@ if __name__ == '__main__':
 		for s in signatures:
 			print >>outfiles['preprocessed'], s
 	
+	names = {}
 	for line in infiles['keystatus']:
 		line   = line.strip()
 		fields = line.split(';')
 		keyid  = fields[1]
 		status = fields[0]
+		name   = fields[14]
+		
+		if keyid in policy_uris:
+			names[keyid] = name
+			
 		if status != 'V' or (keyid not in trusted_keys):
 			print >>outfiles['keystatus'], line
 		else:
@@ -353,7 +382,7 @@ if __name__ == '__main__':
 	for s in policy_uris:
 		if s in interesting_keys:
 			for p in policy_uris[s]:
-				print >>outfiles['policyuris'], '%s;%s' % (s, p)
+				print >>outfiles['policyuris'], '%s;%s;%s' % (s, names.get(s, ''), p)
 
 	for f in infiles:
 		infiles[f].close()

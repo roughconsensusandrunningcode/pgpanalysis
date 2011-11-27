@@ -67,7 +67,7 @@ other versions of pgpring and the output produced by gpg --with-colons
    Same as Public key record format
 
 *** process-keys.py output format ***
-   * preprocessed - Sequences of lines:
+  * preprocessed - Sequences of lines:
         p<keyid> 
         s<keyid>;<signature-date>;<signature-expiration>;<flags>;<level>;<pkalgo>;<hashalgo>;<version>
         ... 
@@ -79,9 +79,13 @@ other versions of pgpring and the output produced by gpg --with-colons
 	 
 	 This file is then processed with cut -d\; -f1 $OUTDIR/preprocessed >$OUTDIR/preprocessed.ka
 	 
-   * keystatus.csv
-     V;98CCD9F47815734F;17;1024;2005-08-09;;4;1
-     <status>;<keyid>;<pkalgo>;<keylen>;<created>;<expire>;<keyversion>;<valid_uids>
+  * keystatus.csv
+     Sample line:
+     VC;8FA240F6E90C6E2B;1;4096;2008-07-19;;4;3;2008-07-19;;;1;8;4;Fabrizio Tarizzo <fabrizio@fabriziotarizzo.org>
+
+     <status>;<keyid>;<pkalgo>;<keylen>;<created>;<expire>;<keyversion>;<valid_uids>;
+     	<mrs.date>;<mrs.expire>;<mrs.flags>;<mrs.pkalgo>;<mrs.hashalgo>;<mrs.version>;<primary_uid>
+     	
      * Status:
         * E:  Expired key
         * Ro: Key revoked by the owner
@@ -96,7 +100,21 @@ other versions of pgpring and the output produced by gpg --with-colons
      * key expiration date, if any (YYYY-MM-DD or empty string)
      * key format version (see RFC4880 sect. 5.5.2)
      * Number of valid User IDs
+     * Date of the most recent self signature, if any (YYYY-MM-DD or empty string)
+     * Expiration date of the most recent self signature, if any (YYYY-MM-DD or empty string)
+     * Flags of the most recent self signature ()
+     * Public Key Algorithm of the most recent self signature
+     * Hash Algorithm of the most recent self signature
+     * Signature packet format version of the most recent self signature
+     * Primary User ID
 
+  * policyuris.csv - For each Certification Policy URI found parsing the pgpring dump:
+    Sample line:
+    8FA240F6E90C6E2B;Fabrizio Tarizzo <fabrizio@fabriziotarizzo.org>;http://www.fabriziotarizzo.org/keysigning/policies/
+
+    * Key ID
+    * Primary UID
+    * Policy URI
 
 *** keyanalyze output format ***
    * msd.csv - For each key in the Reachable set:
@@ -122,7 +140,7 @@ other versions of pgpring and the output produced by gpg --with-colons
        * in-degree (only from keys in the strong set)
        * out-degree (only to keys in the strong set)
        * cross-degree (only from/to keys in the strong set)
-       * eccentricity
+       * Eccentricity
        * Betweenness centrality (absolute)
        * Betweenness centrality (relative)
        * Clustering coefficient
