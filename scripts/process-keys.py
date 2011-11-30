@@ -19,6 +19,11 @@
 import sys
 import os
 import csv
+import re
+
+__author__    = "Fabrizio Tarizzo <fabrizio@fabriziotarizzo.org>"
+__copyright__ = "Copyright (c) 2011 Fabrizio Tarizzo"
+__license__   = "GNU General Public License version 3 or later"
 
 class Key:
 	def __init__ (self, keyid, keylen, flags, created, expire, pkalgo, keyversion):
@@ -297,22 +302,38 @@ if __name__ == '__main__':
 			uid.add_revocation (rev)
 			
 		elif rectype == 'spk':
+			if not sig.is_valid():
+				continue
+				
 			pktype = int (fields[1])
 			flags  = int (fields[2])
 			pklen  = int (fields[3])
 			pkdata = fields[4].decode('string_escape')
+			issuer = sig.issuer
+			signee = key.keyid
 			if pktype == 26:
 				# Certification policy URI
-				if not sig.issuer in policy_uris:
-					policy_uris[sig.issuer] = set()
-
+				
+				#Ignore self signatures
+				if signee == issuer:
+					continue
+				
+				if not issuer in policy_uris:
+					policy_uris[issuer] = {}
+					
+				# Handle special cases
 				if pkdata == 'string':
 					continue
 				if pkdata[0] in ('"', "'"):
 					pkdata = pkdata[1:]
 				if pkdata[-1] in ('"', "'"):
-					pkdata = pkdata[:-1]					
-				policy_uris[sig.issuer].add (pkdata)
+					pkdata = pkdata[:-1]
+					
+				if pkdata not in policy_uris[issuer]:
+					policy_uris[issuer][pkdata] = {'signees': set(), 'last_used': '0000-00-00'}
+				policy_uris[issuer][pkdata]['signees'].add(signee)
+				if policy_uris[issuer][pkdata]['last_used'] < sig.date:
+					policy_uris[issuer][pkdata]['last_used'] = sig.date
 
 	do_key (key, outfiles)
 	print >>sys.stderr, "%d keys done, %d interesting." % (keycount, len (interesting_keys))
@@ -378,11 +399,14 @@ if __name__ == '__main__':
 		else:
 			fields[0] = 'VC'
 			print >>outfiles['keystatus'], ';'.join(fields)
-			
-	for s in policy_uris:
+	
+	removemail = lambda s: re.sub ('<.*>', '', s).strip()
+	getname = lambda k: removemail (names.get(k, '').decode('string_escape'))
+	for s in sorted (policy_uris.keys(), key = getname):
 		if s in interesting_keys:
 			for p in policy_uris[s]:
-				print >>outfiles['policyuris'], '%s;%s;%s' % (s, names.get(s, ''), p)
+				pu = policy_uris[s][p]
+				print >>outfiles['policyuris'], '%s;%s;%s;%d;%s' % (s, getname(s), p, len(pu['signees']), pu['last_used'])
 
 	for f in infiles:
 		infiles[f].close()

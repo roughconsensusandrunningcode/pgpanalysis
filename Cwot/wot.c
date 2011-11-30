@@ -52,7 +52,7 @@ extern int      optopt;
 extern int      opterr;
 extern int      optreset;
 int             debug = 0;
-int             dumpflag = 1;
+int             dumpflag = 0;
 int             idlen = 16;
 
 LIST_HEAD(listhead, _listelem);

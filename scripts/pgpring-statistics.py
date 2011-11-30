@@ -209,8 +209,9 @@ def print_table (data, totals, labels=None, stream=sys.stdout, fmt='html', **kwa
 			print >>stream,'<caption>%s</caption>' % caption
 		if headings:
 			print >>stream, '<thead><tr>'
-			for th in headings:
-				print >>stream, '<th>%s</th>' % th
+			print >>stream, '<th>%s</th>' % headings[0]
+			for th in headings[1:]:
+				print >>stream, '<th colspan="2">%s</th>' % th
 			print >>stream, '</tr></thead>'
 		
 		perc = lambda x,y:100.0*x/y
@@ -305,14 +306,14 @@ print "Reachable set size:", reachable_set_size
 print "Strong set size:", strong_set_size
 
 msd_stats = descriptive_stats (reachable_set_msd)
-print_descriptive_stats (msd_stats,stream=outfiles['tables.html'])
+print_descriptive_stats (msd_stats,stream=outfiles['tables.html'], caption='Key distribution by MSD (Reachable set)')
 reachable_set_msd = None
 
 msd_stats = descriptive_stats ([strong_set_data[k]['msd'] for k in strong_set_data])
-print_descriptive_stats (msd_stats,stream=outfiles['tables.html'])
+print_descriptive_stats (msd_stats,stream=outfiles['tables.html'], caption='Key distribution by MSD (Strong set)')
 
 ecc_stats = descriptive_stats ([strong_set_data[k]['eccentricity'] for k in strong_set_data])
-print_descriptive_stats (ecc_stats,stream=outfiles['tables.html'])
+print_descriptive_stats (ecc_stats,stream=outfiles['tables.html'],caption='Key distribution by Eccentricity (Strong set)')
 
 ecc_distribution = {}
 for i in xrange (ecc_stats['min'], ecc_stats['max']+1):
@@ -587,11 +588,59 @@ totals = {
 
 print "done."
 
-print_table (count_by_key_version, totals, stream=outfiles['tables.html'])
-print_table (count_by_pkalgo, totals, pk_algorithms, stream=outfiles['tables.html'])
-print_table (count_by_keylen, totals, count_by_keylen_lbl, stream=outfiles['tables.html'])
-print_table (count_by_year, totals, count_by_year_lbl, stream=outfiles['tables.html'])
+headings = ('Valid keys', 'Trusted keys', 'Reachable set', 'Strong set')
+print_table (count_by_key_version,
+	totals,
+	stream=outfiles['tables.html'],
+	caption='Keys by key format version',
+	headings = ('Version',) + headings
+)
+	
+print_table (count_by_pkalgo,
+	totals,
+	labels = pk_algorithms,
+	stream=outfiles['tables.html'],
+	caption='Keys by Public Key Algorithm',
+	headings = ('PK Algo',) + headings
+)
+	
+print_table (count_by_keylen,
+	totals,
+	labels = count_by_keylen_lbl,
+	stream=outfiles['tables.html'],
+	caption='Keys by key lenght',
+	headings = ('Key Lenght',) + headings
+)
 
-print_table (sig_count_by_version, sig_totals, stream=outfiles['tables.html'])
-print_table (sig_count_by_level, sig_totals, sig_count_by_level_lbl, stream=outfiles['tables.html'])
-print_table (sig_count_by_hashalgo, sig_totals, hash_algorithms, stream=outfiles['tables.html'])
+print_table (count_by_year,
+	totals,
+	labels = count_by_year_lbl,
+	stream=outfiles['tables.html'],
+	caption='Keys by Age',
+	headings = ('Year',) + headings
+)
+
+
+headings = ('Valid signatures','Reachable set', 'Strong set')
+print_table (sig_count_by_version,
+	sig_totals,
+	stream=outfiles['tables.html'],
+	caption='Signatures by packet format version',
+	headings = ('Version',) + headings
+)
+	
+print_table (sig_count_by_level,
+	sig_totals,
+	labels = sig_count_by_level_lbl,
+	stream=outfiles['tables.html'],
+	caption='Signatures by Level',
+	headings = ('Level',) + headings
+)
+	
+print_table (sig_count_by_hashalgo,
+	sig_totals,
+	labels = hash_algorithms,
+	stream=outfiles['tables.html'],
+	caption='Signatures by Hash Algorithm',
+	headings = ('Hash Algo',) + headings
+)
