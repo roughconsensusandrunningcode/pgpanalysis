@@ -70,10 +70,6 @@ sig_counter = {
     'strong'   : 0
 }
 
-count_by_pkalgo = {}
-for pkalgo in pk_algorithms:
-    count_by_pkalgo[pkalgo] = counter.copy()
-
 sig_count_by_hashalgo = {}
 for halgo in hash_algorithms:
     sig_count_by_hashalgo[halgo] = sig_counter.copy()
@@ -96,6 +92,26 @@ sig_count_by_level = {
     1: sig_counter.copy(),
     2: sig_counter.copy(),
     3: sig_counter.copy()
+}
+
+sig_count_flags = {
+	'policy'  : sig_counter.copy(),
+	'notation': sig_counter.copy()
+}
+
+count_by_pkalgo = {}
+for pkalgo in pk_algorithms:
+    count_by_pkalgo[pkalgo] = counter.copy()
+    
+count_by_mrs_hashalgo = {}
+for halgo in hash_algorithms:
+    count_by_mrs_hashalgo[halgo] = counter.copy()
+
+count_by_mrs_version = {
+    0: counter.copy(),
+    2: counter.copy(),
+    3: counter.copy(),
+    4: counter.copy()
 }
 
 count_by_key_version = {
@@ -404,18 +420,31 @@ for line in infiles['preprocessed']:
 		sig_count_by_hashalgo[hashalgo]['valid'] += 1
 		sig_count_by_version[version]['valid']   += 1
 		sig_count_by_level[level]['valid']   += 1
-
+		
+		if 'P' in flags:
+			sig_count_flags['policy']['valid'] += 1
+		if 'N' in flags:
+			sig_count_flags['notation']['valid'] += 1
+			
 		if signee in reachable_set and signer in reachable_set:
 			reachable_set_signatures += 1
 			sig_count_by_hashalgo[hashalgo]['reachable'] += 1
-			sig_count_by_version[version]['reachable']   += 1
-			sig_count_by_level[level]['reachable']   += 1
+			sig_count_by_version[version]['reachable'] += 1
+			sig_count_by_level[level]['reachable'] += 1
+			if 'P' in flags:
+				sig_count_flags['policy']['reachable'] += 1
+			if 'N' in flags:
+				sig_count_flags['notation']['reachable'] += 1
 		
 		if signee in strong_set and signer in strong_set:
 			strong_set_signatures += 1
 			sig_count_by_hashalgo[hashalgo]['strong'] += 1
-			sig_count_by_version[version]['strong']   += 1
-			sig_count_by_level[level]['strong']   += 1
+			sig_count_by_version[version]['strong'] += 1
+			sig_count_by_level[level]['strong'] += 1
+			if 'P' in flags:
+				sig_count_flags['policy']['strong'] += 1
+			if 'N' in flags:
+				sig_count_flags['notation']['strong'] += 1
 			
 			# Data for clustering coefficient computation
 			matrix[signee]['in'].add  (signer)
@@ -495,14 +524,36 @@ print "Read key status and compute key statistics...",
 for line in infiles['keystatus.csv']:
 	fields = line.strip().split(';')
 	
-	keystatus  = fields[0]
-	keyid      = fields[1]
-	pkalgo     = int(fields[2])
-	keylen     = int(fields[3])
-	create     = fields[4]
-	expire     = fields[5]
-	keyversion = int(fields[6])
-	userids    = int(fields[7])
+	keystatus    = fields[0]
+	keyid        = fields[1]
+	pkalgo       = int(fields[2])
+	keylen       = int(fields[3])
+	create       = fields[4]
+	expire       = fields[5]
+	keyversion   = int(fields[6])
+	userids      = int(fields[7])
+	mrs_date     = fields[8]
+	mrs_expire   = fields[9]
+	mrs_flags    = fields[10]
+	mrs_pkalgo   = fields[11]
+	mrs_hashalgo = fields[12]
+	mrs_version  = fields[13]
+	primary_uid  = fields[14]
+	
+	if mrs_pkalgo != '':
+		mrs_pkalgo = int(mrs_pkalgo)
+	else:
+		mrs_pkalgo = 0
+		
+	if mrs_hashalgo != '':
+		mrs_hashalgo = int(mrs_hashalgo)
+	else:
+		mrs_hashalgo = 0
+		
+	if mrs_version != '':
+		mrs_version = int(mrs_version)
+	else:
+		mrs_version = 0
 
 	if keyid in done_keys:
 		continue
@@ -551,6 +602,8 @@ for line in infiles['keystatus.csv']:
 		count_by_pkalgo[pkalgo]['valid'] +=1
 		count_by_keylen[kl]['valid'] += 1
 		count_by_year[year]['valid'] += 1
+		count_by_mrs_hashalgo[mrs_hashalgo]['valid'] += 1
+		count_by_mrs_version[mrs_version]['valid'] += 1
 		#...
 		
 		if len(keystatus) == 2 and keystatus[1] == 'C':
@@ -559,6 +612,8 @@ for line in infiles['keystatus.csv']:
 			count_by_pkalgo[pkalgo]['trusted'] +=1
 			count_by_keylen[kl]['trusted'] += 1
 			count_by_year[year]['trusted'] += 1
+			count_by_mrs_hashalgo[mrs_hashalgo]['trusted'] += 1
+			count_by_mrs_version[mrs_version]['trusted'] += 1
 			#...
 		
 	if keyid in reachable_set:
@@ -566,6 +621,8 @@ for line in infiles['keystatus.csv']:
 		count_by_pkalgo[pkalgo]['reachable'] +=1
 		count_by_keylen[kl]['reachable'] += 1
 		count_by_year[year]['reachable'] += 1
+		count_by_mrs_hashalgo[mrs_hashalgo]['reachable'] += 1
+		count_by_mrs_version[mrs_version]['reachable'] += 1
 		#...
 				
 	if keyid in strong_set:
@@ -573,6 +630,8 @@ for line in infiles['keystatus.csv']:
 		count_by_pkalgo[pkalgo]['strong'] +=1
 		count_by_keylen[kl]['strong'] += 1
 		count_by_year[year]['strong'] += 1
+		count_by_mrs_hashalgo[mrs_hashalgo]['strong'] += 1
+		count_by_mrs_version[mrs_version]['strong'] += 1
 		#...
 
 
@@ -595,7 +654,7 @@ print_table (count_by_key_version,
 	caption='Keys by key format version',
 	headings = ('Version',) + headings
 )
-	
+
 print_table (count_by_pkalgo,
 	totals,
 	labels = pk_algorithms,
@@ -620,6 +679,19 @@ print_table (count_by_year,
 	headings = ('Year',) + headings
 )
 
+print_table (count_by_mrs_hashalgo,
+	totals,
+	labels = hash_algorithms,
+	stream=outfiles['tables.html'],
+	caption='Keys by Most Recent Self-signature Hash Algorithm',
+	headings = ('Hash Algo',) + headings
+)
+print_table (count_by_mrs_version,
+	totals,
+	stream=outfiles['tables.html'],
+	caption='Keys by Most Recent Self-signature packet format version',
+	headings = ('Version',) + headings
+)
 
 headings = ('Valid signatures','Reachable set', 'Strong set')
 print_table (sig_count_by_version,
@@ -643,4 +715,11 @@ print_table (sig_count_by_hashalgo,
 	stream=outfiles['tables.html'],
 	caption='Signatures by Hash Algorithm',
 	headings = ('Hash Algo',) + headings
+)
+
+print_table (sig_count_flags,
+	sig_totals,
+	stream=outfiles['tables.html'],
+	caption='Signatures with features',
+	headings = ('Feature',) + headings
 )
