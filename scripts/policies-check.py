@@ -51,9 +51,31 @@ def print_uri (uri):
 	policy_uri_print = policy_uri
 	if len (policy_uri) > 50:
 		policy_uri_print = policy_uri[:47] + '[...]'
+	output = ''
+	
+	if not title:
+		title = policy_uri_print
 		
-	return policy_uri_print
+	output += '<div class="policytitle"><a href="%s">%s</a></div>' % (policy_uri, title)
+	if title != policy_uri_print:
+		output += '<div class="policyurl">%s</div>' % (policy_uri)
+		
+	return output
 
+def print_ko_uri (uri):
+	policy_uri, err = uri
+	policy_uri_print = policy_uri
+	if len (policy_uri) > 50:
+		policy_uri_print = policy_uri[:47] + '[...]'
+	output = ''
+	
+	output += '<div class="policytitle"><a rel="nofollow" href="%s">%s</a></div>' % (policy_uri, policy_uri_print)
+	if title != policy_uri_print:
+		output += '<div class="policyurl">%s</div>' % (err)
+		
+	return output
+	
+	
 if __name__ == '__main__':
 	datadir = sys.argv[1]
     
@@ -130,19 +152,32 @@ if __name__ == '__main__':
 	f_ko.close()
 	
 	f_html = file (os.path.join (datadir, 'policyuris.html'), 'w')
+	print >>f_html, """<!DOCTYPE html>
+<html>
+ <head>
+  <meta charset="UTF-8">
+  <title>Policy URIs</title>
+  <style type="text/css">
+  table, td {border:solid 1px;border-collapse:collapse;vertical-align:top}
+  div.policyurl {font-size:x-small}
+  </style>
+ </head>
+ <body>
+"""
+	
 	print >>f_html, '<table><tbody>'
-	for k in ok:
+	for k in sorted (ok, key=lambda k:names[k]):
 		if len(ok[k]) == 1:
 			print >>f_html, '<tr>'
 			print >>f_html, '<td>'
-			print >>f_html, '%s<br>%s' % (k, names[k])
+			print >>f_html, '0x%s<br>%s' % (k, names[k])
 			print >>f_html, '</td>'
 			print >>f_html, '<td>%s</td>' % print_uri(ok[k][0])
 			print >>f_html, '</tr>'
 		else:
 			print >>f_html, '<tr>'
 			print >>f_html, '<td rowspan="%d">' % len(ok[k])
-			print >>f_html, '%s<br>%s' % (k, names[k])
+			print >>f_html, '0x%s<br>%s' % (k, names[k])
 			print >>f_html, '</td>'
 			print >>f_html, '<td>%s</td></tr>' % print_uri(ok[k][0])
 			for u in ok[k][1:]:
@@ -150,5 +185,26 @@ if __name__ == '__main__':
 			
 	print >>f_html, '</tbody></table>'
 	
+	print >>f_html, '<table><tbody>'
+	for k in sorted (ko, key=lambda k:names[k]):
+		if len(ko[k]) == 1:
+			print >>f_html, '<tr>'
+			print >>f_html, '<td>'
+			print >>f_html, '0x%s<br>%s' % (k, names[k])
+			print >>f_html, '</td>'
+			print >>f_html, '<td>%s</td>' % print_ko_uri(ko[k][0])
+			print >>f_html, '</tr>'
+		else:
+			print >>f_html, '<tr>'
+			print >>f_html, '<td rowspan="%d">' % len(ko[k])
+			print >>f_html, '0x%s<br>%s' % (k, names[k])
+			print >>f_html, '</td>'
+			print >>f_html, '<td>%s</td></tr>' % print_ko_uri(ko[k][0])
+			for u in ko[k][1:]:
+				print >>f_html, '<tr><td>%s</td></tr>' % print_ko_uri(u)
+	
+	print >>f_html, '</tbody></table>'
+	
+	print >>f_html, '</body></html>'
 	f_html.close()
    
