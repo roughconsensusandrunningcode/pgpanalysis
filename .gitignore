@@ -1,0 +1,15 @@
+*.bak
+*.o
+*.tmp
+Cwot/wot-centrality
+keyanalyze/keyanalyze
+keyanalyze/pgpring/.deps/
+keyanalyze/pgpring/Makefile
+keyanalyze/pgpring/config.cache
+keyanalyze/pgpring/config.h
+keyanalyze/pgpring/config.log
+keyanalyze/pgpring/config.status
+keyanalyze/pgpring/pgpring
+keyanalyze/pgpring/stamp-h
+keyanalyze/process_keys
+
