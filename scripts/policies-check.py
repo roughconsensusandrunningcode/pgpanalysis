@@ -20,6 +20,9 @@ import sys
 import os.path
 import csv
 import urllib
+import re
+import xml.sax.saxutils
+from StringIO import StringIO
 from HTMLParser import HTMLParser
 import socket
 socket.setdefaulttimeout(15)
@@ -32,11 +35,21 @@ class Parser (HTMLParser):
 	def __init__ (self):
 		HTMLParser.__init__ (self)
 		self.in_title = False
-		self.title=''
+		self.title    = ''
+		self.charset  = None
+		self.charset_patt = re.compile('charset=([^)]*)')
 
 	def handle_starttag (self, tag, attrs):
+		attrs = dict (attrs)
 		if tag == 'title':
 			self.in_title = True
+		elif tag == 'meta':
+			if 'http-equiv' in attrs and attrs['http-equiv'] == 'Content-Type' and 'content' in attrs:
+				match = self.charset_patt.search (attrs['content'])
+				if match:
+					self.charset = match.group(1)
+			elif 'charset' in attrs:
+				self.charset = attrs['charset']
             
 	def handle_endtag (self, tag):
 		if tag == 'title':
@@ -49,12 +62,15 @@ class Parser (HTMLParser):
 def print_uri (uri):
 	policy_uri, real_url, title, size, content_type = uri
 	policy_uri_print = policy_uri
-	if len (policy_uri) > 50:
-		policy_uri_print = policy_uri[:47] + '[...]'
+	if len (policy_uri) > 80:
+		policy_uri_print = policy_uri[:75] + '[...]'
 	output = ''
 	
 	if not title:
 		title = policy_uri_print
+		
+	policy_uri = xml.sax.saxutils.escape (policy_uri)
+	real_url   = xml.sax.saxutils.escape (real_url)
 		
 	output += '<div class="policytitle"><a href="%s">%s</a></div>' % (policy_uri, title)
 	if title != policy_uri_print:
@@ -65,9 +81,11 @@ def print_uri (uri):
 def print_ko_uri (uri):
 	policy_uri, err = uri
 	policy_uri_print = policy_uri
-	if len (policy_uri) > 50:
-		policy_uri_print = policy_uri[:47] + '[...]'
+	if len (policy_uri) > 80:
+		policy_uri_print = policy_uri[:75] + '[...]'
+		
 	output = ''
+	policy_uri = xml.sax.saxutils.escape (policy_uri)
 	
 	output += '<div class="policytitle"><a rel="nofollow" href="%s">%s</a></div>' % (policy_uri, policy_uri_print)
 	if title != policy_uri_print:
@@ -89,6 +107,9 @@ if __name__ == '__main__':
 	ok = {}
 	ko = {}
 	names = {}
+	charset_patt = re.compile('charset=([^)]*)')
+	xml_charset_patt = re.compile('encoding="([^"]*)"')
+
 	for row in r:
 		key, name, policy_uri, n_used, last_used = row
 		names[key] = name
@@ -101,6 +122,12 @@ if __name__ == '__main__':
 			real_url = u.geturl()     # Handle 30x redirects
 			info     = u.info()
 			headers  = info.items()
+			
+			charset  = 'utf-8'
+			if 'content-type' in info:
+				match = charset_patt.search (info['content-type'])
+				if match:
+					charset = match.group(1)
             
 			# Handle special cases
 			# anize.org redirects to http://anize.org/404.html instead of
@@ -113,11 +140,19 @@ if __name__ == '__main__':
 				code = 404
             	
 			if code == 200:
-				content = u.read()
+				content = u.read().strip()
+					
 				size = len(content)
 				content_type = info.gettype()
 				title = ''
+				
 				if content_type == 'text/html':
+					if content[:5] == '<?xml':
+						line = StringIO(content).readline()
+						match = xml_charset_patt.search (line)
+						if match:
+							charset = match.group(1)
+						
 					p = Parser()
 					try:
 						p.feed (content)
@@ -125,9 +160,17 @@ if __name__ == '__main__':
 						print "HTML Parsing error: %s" % str(e),
                         
 					title = p.title
+					
+					if p.charset:
+						charset = p.charset
+					
+					if charset != 'utf-8':
+						title = title.decode(charset)
+						title = title.encode('utf-8')
+						
 					p = None
-
-				csv_ok.writerow ([key, name, policy_uri, real_url, title, size, content_type])
+					
+				csv_ok.writerow ([key, name, policy_uri, real_url, title, size, content_type, charset])
 				if key not in ok:
 					ok[key] = []
 				ok[key].append ([policy_uri, real_url, title, size, content_type])
@@ -155,30 +198,25 @@ if __name__ == '__main__':
 	print >>f_html, """<!DOCTYPE html>
 <html>
  <head>
-  <meta charset="UTF-8">
+  <meta charset="utf-8">
   <title>Policy URIs</title>
   <style type="text/css">
   table, td {border:solid 1px;border-collapse:collapse;vertical-align:top}
   div.policyurl {font-size:x-small}
   </style>
  </head>
- <body>
-"""
+ <body>"""
 	
 	print >>f_html, '<table><tbody>'
 	for k in sorted (ok, key=lambda k:names[k]):
 		if len(ok[k]) == 1:
 			print >>f_html, '<tr>'
-			print >>f_html, '<td>'
-			print >>f_html, '0x%s<br>%s' % (k, names[k])
-			print >>f_html, '</td>'
+			print >>f_html, '<td>0x%s<br>%s</td>' % (k, names[k])
 			print >>f_html, '<td>%s</td>' % print_uri(ok[k][0])
 			print >>f_html, '</tr>'
 		else:
 			print >>f_html, '<tr>'
-			print >>f_html, '<td rowspan="%d">' % len(ok[k])
-			print >>f_html, '0x%s<br>%s' % (k, names[k])
-			print >>f_html, '</td>'
+			print >>f_html, '<td rowspan="%d">0x%s<br>%s</td>' % (len(ok[k]), k, names[k])
 			print >>f_html, '<td>%s</td></tr>' % print_uri(ok[k][0])
 			for u in ok[k][1:]:
 				print >>f_html, '<tr><td>%s</td></tr>' % print_uri(u)
@@ -189,16 +227,12 @@ if __name__ == '__main__':
 	for k in sorted (ko, key=lambda k:names[k]):
 		if len(ko[k]) == 1:
 			print >>f_html, '<tr>'
-			print >>f_html, '<td>'
-			print >>f_html, '0x%s<br>%s' % (k, names[k])
-			print >>f_html, '</td>'
+			print >>f_html, '<td>0x%s<br>%s</td>' % (k, names[k])
 			print >>f_html, '<td>%s</td>' % print_ko_uri(ko[k][0])
 			print >>f_html, '</tr>'
 		else:
 			print >>f_html, '<tr>'
-			print >>f_html, '<td rowspan="%d">' % len(ko[k])
-			print >>f_html, '0x%s<br>%s' % (k, names[k])
-			print >>f_html, '</td>'
+			print >>f_html, '<td rowspan="%d">0x%s<br>%s</td>' % (len(ko[k]), k, names[k])
 			print >>f_html, '<td>%s</td></tr>' % print_ko_uri(ko[k][0])
 			for u in ko[k][1:]:
 				print >>f_html, '<tr><td>%s</td></tr>' % print_ko_uri(u)
@@ -207,4 +241,3 @@ if __name__ == '__main__':
 	
 	print >>f_html, '</body></html>'
 	f_html.close()
-   
