@@ -32,3 +32,11 @@ keyring.
    
    By Fabrizio Tarizzo - Licensed under GNU General Public License
    (GPL) version 3 or later.
+   
+ * utils/
+ 
+   * preprocessed2gexf.py Convert process-keys.py output in GEXF format
+     readable by Gephy and other graph analysis software
+   
+   By Fabrizio Tarizzo - Licensed under GNU General Public License
+   (GPL) version 3 or later.
