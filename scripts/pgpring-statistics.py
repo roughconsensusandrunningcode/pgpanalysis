@@ -59,6 +59,9 @@ pk_algorithms = {
 }
 
 counter = {
+	'expired'  : 0,
+	'revoked'  : 0,
+	'invalid'  : 0,
     'valid'    : 0,
     'trusted'  : 0,
     'reachable': 0,
@@ -207,7 +210,8 @@ def print_table (data, totals, labels=None, stream=sys.stdout, fmt='html', **kwa
 			lbl = k
 			if labels and k in labels:
 				lbl = labels[k]
-			print >>stream, "%s;%d;%d;%d;%d" % (lbl, data[k]['valid'], data[k]['trusted'], data[k]['reachable'], data[k]['strong'])
+			print >>stream, "%s;%d;%d;%d;%d" % (lbl, data[k]['expired'], data[k]['revoked'], data[k]['invalid'], 
+				data[k]['valid'], data[k]['trusted'], data[k]['reachable'], data[k]['strong'])
 			
 	elif fmt == 'html':
 		tableattrs  = kwargs.get('tableattrs')
@@ -239,6 +243,13 @@ def print_table (data, totals, labels=None, stream=sys.stdout, fmt='html', **kwa
 				lbl = labels[k]
 			print >>stream, '<tr>'
 			print >>stream, '<td>%s</td>' % lbl
+			if 'expired' in data[k]:
+				print >>stream, '<td>%d</td><td>%.2f%%</td>' % (data[k]['expired'], perc (data[k]['expired'], totals['expired']))
+			if 'revoked' in data[k]:
+				print >>stream, '<td>%d</td><td>%.2f%%</td>' % (data[k]['revoked'], perc (data[k]['revoked'], totals['revoked']))
+			if 'invalid' in data[k]:
+				print >>stream, '<td>%d</td><td>%.2f%%</td>' % (data[k]['invalid'], perc (data[k]['invalid'], totals['invalid']))
+				
 			print >>stream, '<td>%d</td><td>%.2f%%</td>' % (data[k]['valid'], perc (data[k]['valid'], totals['valid']))
 			if 'trusted' in data[k]:
 				print >>stream, '<td>%d</td><td>%.2f%%</td>' % (data[k]['trusted'], perc (data[k]['trusted'], totals['trusted']))
@@ -584,17 +595,44 @@ for line in infiles['keystatus.csv']:
 	
 	if keystatus == 'E':
 		expired_keys += 1
+		count_by_key_version[keyversion]['expired'] +=1
+		count_by_pkalgo[pkalgo]['expired'] +=1
+		count_by_keylen[kl]['expired'] += 1
+		count_by_year[year]['expired'] += 1
+		count_by_mrs_hashalgo[mrs_hashalgo]['expired'] += 1
+		count_by_mrs_version[mrs_version]['expired'] += 1
 		
 	elif keystatus == 'Ro':
 		revoked_keys += 1
 		revoked_keys_owner +=1
+		count_by_key_version[keyversion]['revoked'] +=1
+		count_by_pkalgo[pkalgo]['revoked'] +=1
+		count_by_keylen[kl]['revoked'] += 1
+		count_by_year[year]['revoked'] += 1
+		count_by_mrs_hashalgo[mrs_hashalgo]['revoked'] += 1
+		count_by_mrs_version[mrs_version]['revoked'] += 1
 		
 	elif keystatus == 'Rd':
 		revoked_keys += 1
 		revoked_keys_deleg +=1
+	elif keystatus == 'Ro':
+		revoked_keys += 1
+		revoked_keys_owner +=1
+		count_by_key_version[keyversion]['revoked'] +=1
+		count_by_pkalgo[pkalgo]['revoked'] +=1
+		count_by_keylen[kl]['revoked'] += 1
+		count_by_year[year]['revoked'] += 1
+		count_by_mrs_hashalgo[mrs_hashalgo]['revoked'] += 1
+		count_by_mrs_version[mrs_version]['revoked'] += 1
 		
 	elif keystatus == 'I':
 		invalid_keys += 1
+		count_by_key_version[keyversion]['invalid'] +=1
+		count_by_pkalgo[pkalgo]['invalid'] +=1
+		count_by_keylen[kl]['invalid'] += 1
+		count_by_year[year]['invalid'] += 1
+		count_by_mrs_hashalgo[mrs_hashalgo]['invalid'] += 1
+		count_by_mrs_version[mrs_version]['invalid'] += 1
 					
 	elif keystatus[0] == 'V':
 		valid_keys += 1
@@ -647,7 +685,7 @@ totals = {
 
 print "done."
 
-headings = ('Valid keys', 'Trusted keys', 'Reachable set', 'Strong set')
+headings = ('Expired keys', 'Revoked keys', 'Invalid keys', 'Valid keys', 'Trusted keys', 'Reachable set', 'Strong set')
 print_table (count_by_key_version,
 	totals,
 	stream=outfiles['tables.html'],
