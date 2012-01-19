@@ -78,6 +78,7 @@ pgp_sig_t;
 typedef struct pgp_keyinfo
 {
   char *keyid;
+  char *fingerprint;
   struct pgp_uid *address;
   int flags;
   short keylen;

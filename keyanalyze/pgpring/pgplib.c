@@ -198,6 +198,7 @@ static void _pgp_free_key (pgp_key_t ** kpp)
 
   pgp_free_uid (&kp->address);
   safe_free (&kp->keyid);
+  safe_free (&kp->fingerprint);
   safe_free (kpp);
 }
 

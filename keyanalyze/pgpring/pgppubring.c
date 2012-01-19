@@ -322,14 +322,23 @@ static pgp_key_t *pgp_parse_pgp3_key (unsigned char *buff, size_t l)
 
   for (k = 0; k < 2; k++)
   {
-    for (id = 0, i = SHA_DIGEST_LENGTH - 8 + k * 4;
-	 i < SHA_DIGEST_LENGTH + (k - 1) * 4; i++)
+    for (id = 0, i = SHA_DIGEST_LENGTH - 8 + k * 4; i < SHA_DIGEST_LENGTH + (k - 1) * 4; i++)
       id = (id << 8) + digest[i];
 
     snprintf ((char *) scratch + k * 8, sizeof (scratch) - k * 8, "%08lX", id);
   }
 
   p->keyid = safe_strdup ((char *) scratch);
+  
+  for (k = 0; k < 5; k++)
+  {
+    for (id = 0, i = k * 4; i <  (k + 1) * 4; i++)
+      id = (id << 8) + digest[i];
+
+    snprintf ((char *) scratch + k * 8, sizeof (scratch) - k * 8, "%08lX", id);
+  }
+
+  p->fingerprint = safe_strdup ((char *) scratch);
 
   return p;
 }
@@ -1010,6 +1019,9 @@ static void pgpring_dump_keyblock (pgp_key_t *p)
         printf ("%04d-%02d-%02d", 1900 + tp->tm_year, tp->tm_mon + 1, tp->tm_mday);
     }
 	printf (":%d:\n", p->version);
+	
+	if (p->fingerprint && !(p->flags & KEYFLAG_SUBKEY))
+		printf ("fpr:::::::::%s:\n", p->fingerprint);
 
     for (uid = p->address; uid; uid = uid->next, first = 0)
     {
